@@ -124,7 +124,9 @@ module.exports =  (env, options)=> {
                 }
             }),
             // !devMode ? new CleanWebpackPlugin() : false,
-            !devMode ? new BundleAnalyzerPlugin() : false
+            // Only run the bundle analyzer when explicitly requested (ANALYZE=true npm run build).
+            // Its default "server" mode starts an HTTP server that never exits, which hangs CI builds.
+            process.env.ANALYZE === 'true' ? new BundleAnalyzerPlugin() : false
         ].filter(Boolean),
         optimization: {
             // splitChunks: {
