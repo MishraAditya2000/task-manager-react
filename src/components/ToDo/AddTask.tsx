@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { CalendarIcon, ClockIcon, CloseIcon,ChevronDownIcon } from '@components/Icons';
-import { Task, TaskDraft,PRIORITIES,Priority } from '@constants/types';
+import React, { useEffect, useState,useRef } from 'react';
+import { CalendarIcon, ClockIcon, CloseIcon, ChevronDownIcon } from '@components/Icons';
+import { Task, TaskDraft, PRIORITIES, Priority } from '@constants/types';
 
 interface AddTaskProps {
   open: boolean;
@@ -9,9 +9,10 @@ interface AddTaskProps {
   onClose: () => void;
   onSubmit: (draft: TaskDraft) => void;
 }
- 
+
+
 const fieldBox =
-  'flex h-11 w-full items-center gap-2 border border-slate-200 bg-white px-3 text-sm text-slate-700';
+  'flex h-11 w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700';
  
 const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, onSubmit }) => {
   const [title, setTitle] = useState('');
@@ -20,7 +21,28 @@ const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, 
   const [date, setDate] = useState(defaultDate);
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('Medium');
+  const [priorityOpen, setPriorityOpen] = useState(false);
+  const priorityRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState('');
+ 
+  // Close the priority list on outside click or Escape
+  useEffect(() => {
+    if (!priorityOpen) return;
+    const onDown = (e: MouseEvent | TouchEvent) => {
+      if (priorityRef.current && !priorityRef.current.contains(e.target as Node)) {
+        setPriorityOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setPriorityOpen(false);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('touchstart', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('touchstart', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [priorityOpen]);
  
   // Reset / prefill every time the sheet opens
   useEffect(() => {
@@ -31,6 +53,7 @@ const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, 
     setDate(initial?.date ?? defaultDate);
     setDescription(initial?.description ?? '');
     setPriority(initial?.priority ?? 'Medium');
+    setPriorityOpen(false);
     setError('');
   }, [open, initial, defaultDate]);
  
@@ -114,27 +137,51 @@ const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, 
           <CalendarIcon width={16} height={16} className="shrink-0 text-slate-500" />
         </label>
  
-        <label htmlFor="task-priority" className="mb-1.5 block text-xs text-slate-600">
-          Priority
-        </label>
-        <div className="relative mb-4">
-          <select
-            id="task-priority"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as Priority)}
-            className={`${fieldBox} appearance-none pr-10 outline-hidden focus:border-[#2F4BDB]`}
+        <label className="mb-1.5 block text-xs text-slate-600">Priority</label>
+        {/* Custom dropdown: rendered in the page, so no native popup quirks */}
+        <div ref={priorityRef} className="relative mb-4">
+          <button
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded={priorityOpen}
+            onClick={() => setPriorityOpen((o) => !o)}
+            className={`flex h-11 w-full items-center justify-between rounded-lg border bg-white px-3 text-sm text-slate-700 ${
+              priorityOpen ? 'border-[#2F4BDB]' : 'border-slate-200'
+            }`}
           >
-            {PRIORITIES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-          <ChevronDownIcon
-            width={16}
-            height={16}
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
-          />
+            <span>{priority}</span>
+            <ChevronDownIcon
+              width={16}
+              height={16}
+              className={`text-slate-500 transition-transform ${priorityOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+ 
+          {priorityOpen && (
+            <ul
+              role="listbox"
+              className="absolute inset-x-0 top-full z-10 mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+            >
+              {PRIORITIES.map((p) => (
+                <li key={p} role="option" aria-selected={p === priority}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPriority(p);
+                      setPriorityOpen(false);
+                    }}
+                    className={`block w-full px-3 py-2.5 text-left text-sm ${
+                      p === priority
+                        ? 'bg-[#EEF0FF] font-medium text-[#2F4BDB]'
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
  
         <label className="mb-1.5 block text-xs text-slate-600">Description</label>
@@ -143,14 +190,14 @@ const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, 
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Add Description"
           rows={4}
-          className="mb-5 w-full resize-none border border-slate-200 bg-white p-3 text-sm outline-hidden focus:border-[#2F4BDB]"
+          className="mb-5 w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm outline-hidden focus:border-[#2F4BDB]"
         />
  
         {error && <p className="mb-3 text-xs text-red-500">{error}</p>}
  
         <button
           type="submit"
-          className="h-12 w-full bg-[#4361EE] text-[15px] font-medium text-white active:scale-[0.99]"
+          className="h-12 w-full rounded-lg bg-[#4361EE] text-[15px] font-medium text-white active:scale-[0.99]"
         >
           {initial ? 'Save task' : 'Create task'}
         </button>

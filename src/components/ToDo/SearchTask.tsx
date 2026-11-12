@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeftIcon, CheckIcon, SearchIcon } from '../Icons';
-import { Task } from '../../constants/types';
+import { ArrowLeftIcon, CheckIcon, SearchIcon } from '@components/Icons';
+import { Task } from '@constants/types';
 
 interface SearchTasksProps {
   weekTasks: Task[]; // tasks of the selected week (already filtered by the parent)
