@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { CalendarIcon, ClockIcon, CloseIcon } from '@components/Icons';
-import { Task, TaskDraft } from '@constants/types';
+import { CalendarIcon, ClockIcon, CloseIcon,ChevronDownIcon } from '@components/Icons';
+import { Task, TaskDraft,PRIORITIES,Priority } from '@constants/types';
 
 interface AddTaskProps {
   open: boolean;
@@ -9,18 +9,19 @@ interface AddTaskProps {
   onClose: () => void;
   onSubmit: (draft: TaskDraft) => void;
 }
-
+ 
 const fieldBox =
   'flex h-11 w-full items-center gap-2 border border-slate-200 bg-white px-3 text-sm text-slate-700';
-
+ 
 const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, onSubmit }) => {
   const [title, setTitle] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [date, setDate] = useState(defaultDate);
   const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState<Priority>('Medium');
   const [error, setError] = useState('');
-
+ 
   // Reset / prefill every time the sheet opens
   useEffect(() => {
     if (!open) return;
@@ -29,9 +30,10 @@ const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, 
     setEnd(initial?.end ?? '');
     setDate(initial?.date ?? defaultDate);
     setDescription(initial?.description ?? '');
+    setPriority(initial?.priority ?? 'Medium');
     setError('');
   }, [open, initial, defaultDate]);
-
+ 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -42,9 +44,9 @@ const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, 
       setError('End time must be after start time.');
       return;
     }
-    onSubmit({ title: title.trim(), start, end, date, description: description.trim() });
+    onSubmit({ title: title.trim(), start, end, date, description: description.trim(), priority });
   };
-
+ 
   return (
     <div
       className={`fixed inset-0 z-40 transition-opacity duration-200 ${
@@ -54,11 +56,11 @@ const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, 
     >
       {/* backdrop */}
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-
+ 
       {/* sheet */}
       <form
         onSubmit={handleSubmit}
-        className={`absolute inset-x-0 bottom-0 rounded-t-2xl bg-white px-5 pb-6 pt-5 shadow-xl transition-transform duration-300 ${
+        className={`absolute inset-x-0 bottom-0 max-h-[92%] overflow-y-auto rounded-t-2xl bg-white px-5 pb-6 pt-5 shadow-xl transition-transform duration-300 ${
           open ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
@@ -68,15 +70,15 @@ const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, 
             <CloseIcon width={20} height={20} />
           </button>
         </div>
-
+ 
         <label className="mb-1.5 block text-xs text-slate-600">Task title</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Doing Homework"
-          className={`${fieldBox} mb-4 outline-none focus:border-[#2F4BDB]`}
+          className={`${fieldBox} mb-4 outline-hidden focus:border-[#2F4BDB]`}
         />
-
+ 
         <label className="mb-1.5 block text-xs text-slate-600">Set Time</label>
         <div className="mb-4 grid grid-cols-2 gap-3">
           <label className={fieldBox}>
@@ -86,7 +88,7 @@ const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, 
               value={start}
               onChange={(e) => setStart(e.target.value)}
               aria-label="Start time"
-              className="w-full bg-transparent outline-none"
+              className="w-full bg-transparent outline-hidden"
             />
           </label>
           <label className={fieldBox}>
@@ -96,33 +98,56 @@ const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, 
               value={end}
               onChange={(e) => setEnd(e.target.value)}
               aria-label="End time"
-              className="w-full bg-transparent outline-none"
+              className="w-full bg-transparent outline-hidden"
             />
           </label>
         </div>
-
+ 
         <label className="mb-1.5 block text-xs text-slate-600">Set Date</label>
         <label className={`${fieldBox} mb-4 justify-between`}>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full bg-transparent outline-none"
+            className="w-full bg-transparent outline-hidden"
           />
-          {/* <CalendarIcon width={16} height={16} className="shrink-0 text-slate-500" /> */}
+          <CalendarIcon width={16} height={16} className="shrink-0 text-slate-500" />
         </label>
-
+ 
+        <label htmlFor="task-priority" className="mb-1.5 block text-xs text-slate-600">
+          Priority
+        </label>
+        <div className="relative mb-4">
+          <select
+            id="task-priority"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as Priority)}
+            className={`${fieldBox} appearance-none pr-10 outline-hidden focus:border-[#2F4BDB]`}
+          >
+            {PRIORITIES.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          <ChevronDownIcon
+            width={16}
+            height={16}
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+          />
+        </div>
+ 
         <label className="mb-1.5 block text-xs text-slate-600">Description</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Add Description"
           rows={4}
-          className="mb-5 w-full resize-none  border border-slate-200 bg-white p-3 text-sm outline-none focus:border-[#2F4BDB]"
+          className="mb-5 w-full resize-none border border-slate-200 bg-white p-3 text-sm outline-hidden focus:border-[#2F4BDB]"
         />
-
+ 
         {error && <p className="mb-3 text-xs text-red-500">{error}</p>}
-
+ 
         <button
           type="submit"
           className="h-12 w-full bg-[#4361EE] text-[15px] font-medium text-white active:scale-[0.99]"
@@ -133,5 +158,6 @@ const AddTask: React.FC<AddTaskProps> = ({ open, defaultDate, initial, onClose, 
     </div>
   );
 };
-
+ 
 export default AddTask;
+ 

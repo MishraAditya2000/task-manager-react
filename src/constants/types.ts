@@ -1,3 +1,7 @@
+export const PRIORITIES = ['Low', 'Medium', 'High'] as const;
+export type Priority = (typeof PRIORITIES)[number];
+
+
 export interface Task {
   id: string;
   title: string;
@@ -5,6 +9,7 @@ export interface Task {
   end: string; // "HH:mm"
   date: string; // "YYYY-MM-DD"
   description: string;
+  priority: Priority;
   done: boolean;
 }
 
